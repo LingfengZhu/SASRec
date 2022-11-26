@@ -29,8 +29,8 @@ def run_recbole(model=None, dataset=None, config_file_list=None, config_dict=Non
         saved (bool, optional): Whether to save the model. Defaults to ``True``.
     """
     # configurations initialization
-    config = Config(model=model, dataset=dataset, config_file_list=config_file_list, config_dict=config_dict)
-    init_seed(config['seed'], config['reproducibility'])
+    config = Config(model=model, dataset=dataset, config_file_list=config_file_list, config_dict=config_dict) # 获取配置信息，存到对象 config 中（该对象为 Config 类的一个实例）
+    init_seed(config['seed'], config['reproducibility']) # 确定全局随机种子
     # logger initialization
     init_logger(config)
     logger = getLogger()
@@ -38,7 +38,7 @@ def run_recbole(model=None, dataset=None, config_file_list=None, config_dict=Non
     logger.info(config)
 
     # dataset filtering
-    dataset = create_dataset(config)
+    dataset = create_dataset(config) # 加载数据集
     logger.info(dataset)
 
     # dataset splitting
