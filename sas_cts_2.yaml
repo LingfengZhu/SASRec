@@ -23,13 +23,14 @@ clip_grad_norm: ~
 # clip_grad_norm:  {'max_norm': 5, 'norm_type': 2}
 weight_decay: 0.0
 require_pow: False
-load_col: # 指定加载哪些 column
+load_col: # 指定加载哪些 column；参见数据集的 .inter 文件
     inter: ['user_id', 'item_id', 'rating', 'timestamp', 'item_id_list_field', 'item_length']
 
 # evaluation settings
 # #{'LS':[0.8,0.1,0.1]}
 
-eval_args: 
+# evaluation 时的参数；在同一数据集上对比不同模型时要注意保证此处的 eval 参数一致
+eval_args:
   split: {'LS': 'valid_and_test'}
   group_by: user
   order: TO
@@ -44,16 +45,19 @@ loss_decimal_place: 4
 metric_decimal_place: 4
 
 
-n_layers: 2
-n_heads: 2
-hidden_size: 64
-inner_size: 256
-hidden_dropout_prob: 0.1
-attn_dropout_prob: 0.1
-hidden_act: 'gelu'
-layer_norm_eps: 1e-12
-initializer_range: 0.02
-loss_type: 'CE'
-lmd: 0.1
+# 模型超参数
+## SASRec 部分
+n_layers: 2 # Transformer block 的个数
+n_heads: 2 # multi-head 的头数
+hidden_size: 64 # Transformer 的输入/输出维度
+inner_size: 256 # Transformer 内部的 ffn 层（feed-forward net）即 mlp 层（multilater perceptron）的维度，一般为 hidden_size 的 4 倍
+hidden_dropout_prob: 0.1 # hidden states 的 dropout 率
+attn_dropout_prob: 0.1 # self-attention 的 dropout 率
+hidden_act: 'gelu' # 激活函数
+layer_norm_eps: 1e-12 # layer normalization 参数，一般不用管
+initializer_range: 0.02 # 参数初始化设置：在 -0.02 到 0.02 范围内从高斯分布初始化模型的所有参数
+loss_type: 'CE' # 损失函数：Cross Entropy 交叉熵
+## 对比学习部分
+lmd: 0.1 # 对比学习中损失的权重
 lmd_sem: 0.1
-aug: 'cts'
+aug: 'cts' # 两种对比学习方式：'self' 对应 self-CTS，'CTS' 对应 ST-CTS
