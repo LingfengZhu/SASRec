@@ -23,7 +23,7 @@ clip_grad_norm: ~
 # clip_grad_norm:  {'max_norm': 5, 'norm_type': 2}
 weight_decay: 0.0
 require_pow: False
-load_col: 
+load_col: # 指定加载哪些 column
     inter: ['user_id', 'item_id', 'rating', 'timestamp', 'item_id_list_field', 'item_length']
 
 # evaluation settings
