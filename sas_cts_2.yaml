@@ -31,7 +31,7 @@ load_col: # 指定加载哪些 column；参见数据集的 .inter 文件
 # evaluation settings
 # evaluation 时的参数；在同一数据集上对比不同模型时要注意保证此处的 eval 参数一致
 eval_args:
-  split: {'LS': 'valid_and_test'} # 划分训练/验证/测试集；'LS':[0.8,0.1,0.1]} 表示按 8:1:1 的比例划分训练/验证/测试集
+  split: {'LS': 'valid_and_test'} # 划分训练/验证/测试集；'LS':[0.8,0.1,0.1]} 中 LS 表示留一法；按 8:1:1 的比例划分训练/验证/测试集
   group_by: user
   order: TO
   mode: full
