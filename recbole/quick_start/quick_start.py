@@ -50,16 +50,17 @@ def run_recbole(model=None, dataset=None, config_file_list=None, config_dict=Non
     logger.info(model)
 
     # trainer loading and initialization
-    trainer = get_trainer(config['MODEL_TYPE'], config['model'])(config, model)
+    trainer = get_trainer(config['MODEL_TYPE'], config['model'])(config, model) # 得到当前 model 所需的特定 trainer
 
     # model training
+    ## 选取在 valid 集上效果最好的模型
     best_valid_score, best_valid_result = trainer.fit(
         train_data, valid_data, saved=saved, show_progress=config['show_progress']
     )
 
     # model evaluation
     test_result = trainer.evaluate(test_data, load_best_model=saved, show_progress=config['show_progress'])
-
+    ## 在控制台中打印出来的结果
     logger.info(set_color('best valid ', 'yellow') + f': {best_valid_result}')
     logger.info(set_color('test result', 'yellow') + f': {test_result}')
 
