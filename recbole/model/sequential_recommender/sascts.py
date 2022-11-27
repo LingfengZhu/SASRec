@@ -165,24 +165,25 @@ class SASCTS(SequentialRecommender):
     def forward(self, item_seq, item_seq_len):
         position_ids = torch.arange(item_seq.size(1), dtype=torch.long, device=item_seq.device)
         position_ids = position_ids.unsqueeze(0).expand_as(item_seq)
-        position_embedding = self.position_embedding(position_ids)
+        position_embedding = self.position_embedding(position_ids) # position_embedding 的生成方式与 BERT 完全一致
 
         item_emb = self.item_embedding(item_seq)
         input_emb = item_emb + position_embedding
         input_emb = self.LayerNorm(input_emb)
         input_emb = self.dropout(input_emb)
 
-        extended_attention_mask = self.get_attention_mask(item_seq) 
+        extended_attention_mask = self.get_attention_mask(item_seq) # 获取 attention
 
-        trm_output = self.trm_encoder(input_emb, extended_attention_mask, output_all_encoded_layers=True)
+        trm_output = self.trm_encoder(input_emb, extended_attention_mask, output_all_encoded_layers=True) # Transformer encoder
         output = trm_output[-1]
-        output = self.gather_indexes(output, item_seq_len - 1)
+        output = self.gather_indexes(output, item_seq_len - 1) # 最后一个时刻的 embedding 作为 output
         return output  # [B H]
 
     def calculate_loss(self, interaction):
-        item_seq = interaction[self.ITEM_SEQ]   #N * L
-        item_seq_len = interaction[self.ITEM_SEQ_LEN]
-        seq_output = self.forward(item_seq, item_seq_len)  # N * D
+        ## 标准 SASRec 的流程
+        item_seq = interaction[self.ITEM_SEQ]   # 一个 N * L 的矩阵；N 为 batch size；L 为 sequence length（过长的截断到 L，过短的补 0 到 L）
+        item_seq_len = interaction[self.ITEM_SEQ_LEN] # 记录 sequence 的真实长度
+        seq_output = self.forward(item_seq, item_seq_len)  # 一个 N * D 的矩阵；
         pos_items = interaction[self.POS_ITEM_ID]
         if self.loss_type == 'BPR':
             neg_items = interaction[self.NEG_ITEM_ID]
@@ -193,19 +194,20 @@ class SASCTS(SequentialRecommender):
             loss = self.loss_fct(pos_score, neg_score)
         else:  # self.loss_type = 'CE'
             test_item_emb = self.item_embedding.weight
-            logits = torch.matmul(seq_output, test_item_emb.transpose(0, 1))
-            loss = self.loss_fct(logits, pos_items)
+            logits = torch.matmul(seq_output, test_item_emb.transpose(0, 1)) # 所有 item embedding 和 sequence output 做相似度计算
+            loss = self.loss_fct(logits, pos_items) # 最后做 softmax 与交叉熵得到多分类损失
 
 
+        ## 对比学习流程
         raw_seq_output = self.forward(item_seq, item_seq_len)
 
-        
-        if self.config['aug'] == 'self':
+        if self.config['aug'] == 'self': # aug == 'self'，第一种对比学习 self-CTS：虽然代码一样，但是 raw_seq_output 与 cts_seq_output 是不一样的（差异来自 dropout 的随机性）
             cts_seq_output = self.forward(item_seq, item_seq_len)
-        else:
+        else: # aug == 'cts'，第二种对比学习 ST-CTS：通过数据增强加入噪声后生成 cts_seq_output 
             cts_aug, cts_aug_lengths = interaction['aug'], interaction['aug_lengths']
             cts_seq_output = self.forward(cts_aug, cts_aug_lengths)
 
+        # 对比学习的损失函数
         cts_nce_logits, cts_nce_labels = self.cts_loss(raw_seq_output, cts_seq_output, temp=1.0,
                                                         batch_size=item_seq_len.shape[0])
         nce_loss = self.loss_fct(cts_nce_logits, cts_nce_labels)
