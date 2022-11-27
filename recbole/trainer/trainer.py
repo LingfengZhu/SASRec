@@ -33,7 +33,7 @@ from recbole.evaluator import Evaluator, Collector
 from recbole.utils import ensure_dir, get_local_time, early_stopping, calculate_valid_score, dict2str, \
     EvaluatorType, KGDataLoaderState, get_tensorboard, set_color, get_gpu_usage, WandbLogger
 
-
+# 抽象 trainer，所有 Trainer 的父类
 class AbstractTrainer(object):
     r"""Trainer Class is used to manage the training and evaluation processes of recommender system models.
     AbstractTrainer is an abstract class in which the fit() and evaluate() method should be implemented according
@@ -108,6 +108,7 @@ class Trainer(AbstractTrainer):
         self.item_tensor = None
         self.tot_item_num = None
 
+    # 构建优化器
     def _build_optimizer(self, **kwargs):
         r"""Init the Optimizer
 
@@ -164,8 +165,8 @@ class Trainer(AbstractTrainer):
             multiple parts and the model return these multiple parts loss instead of the sum of loss, it will return a
             tuple which includes the sum of loss in each part.
         """
-        self.model.train()
-        loss_func = loss_func or self.model.calculate_loss
+        self.model.train() # 设置为训练模式（BN 和 dropout 在训练和测试阶段有不同的操作）
+        loss_func = loss_func or self.model.calculate_loss # 如果没有传入 loss_func，则会调用 self.model.calculate_loss
         total_loss = None
         iter_data = (
             tqdm(
@@ -177,7 +178,7 @@ class Trainer(AbstractTrainer):
         )
         for batch_idx, interaction in enumerate(iter_data):
             interaction = interaction.to(self.device)
-            self.optimizer.zero_grad()
+            self.optimizer.zero_grad() # 将梯度全部重置为 0
             losses = loss_func(interaction)
             if isinstance(losses, tuple):
                 loss = sum(losses)
@@ -329,7 +330,7 @@ class Trainer(AbstractTrainer):
             train_data.get_model(self.model)
         valid_step = 0
 
-        for epoch_idx in range(self.start_epoch, self.epochs):
+        for epoch_idx in range(self.start_epoch, self.epochs): # 从 start_epoch 这一轮开始训练；共训练 epochs 轮
             # train
             training_start_time = time()
             train_loss = self._train_epoch(train_data, epoch_idx, show_progress=show_progress)
